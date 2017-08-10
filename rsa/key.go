@@ -28,6 +28,15 @@ func ParsePKCS8Key(publicKey, privateKey []byte) (Key, error) {
 	return &key{publicKey: puk.(*rsa.PublicKey), privateKey: prk.(*rsa.PrivateKey)}, nil
 }
 
+func ParsePKCSPubKey(publicKey []byte) (Key, error) {
+	puk, err := x509.ParsePKIXPublicKey(publicKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return &key{publicKey: puk.(*rsa.PublicKey)}, nil
+}
+
 func ParsePKCS1Key(publicKey, privateKey []byte) (Key, error) {
 	puk, err := x509.ParsePKIXPublicKey(publicKey)
 	if err != nil {
@@ -69,6 +78,25 @@ func LoadKeyFromPEMFile(publicKeyFilePath, privateKeyFilePath string, ParseKey f
 	}
 
 	return ParseKey(puk.Bytes, prk.Bytes)
+}
+
+func LoadPubKeyFromPEMFile(publicKeyFilePath string, ParseKey func([]byte) (Key, error)) (Key, error) {
+
+	//TODO 断言如果入参为"" ，则直接报错
+
+	publicKeyFilePath = strings.TrimSpace(publicKeyFilePath)
+
+	pukBytes, err := ioutil.ReadFile(publicKeyFilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	puk, _ := pem.Decode(pukBytes)
+	if puk == nil {
+		return nil, errors.New("publicKey is not pem formate")
+	}
+
+	return ParseKey(puk.Bytes)
 }
 
 type key struct {
